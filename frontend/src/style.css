@@ -1,0 +1,281 @@
+/* ============ 1. DESIGN TOKENS (CSS custom properties) ============ */
+:root {
+  --paper: #dfe9f4;
+  --grid: #bccfe3;
+  --card: #f7faff;
+  --ink: #10233f;
+  --ink-soft: #4a5f7a;
+  --cobalt: #2340e8;
+  --amber: #ffb224;
+  --ok: #0e9f6e;
+  --bad: #d6336c;
+  --radius: 10px;
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-code: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+/* ============ 2. RESET + PAGE BACKGROUND ============ */
+*, *::before, *::after { box-sizing: border-box; }
+::selection { background: var(--amber); color: var(--ink); }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;                       /* grid + place-items = easy centering */
+  place-items: center;
+  padding: clamp(1rem, 4vw, 3rem);     /* clamp(min, fluid, max) */
+  font-family: var(--font-body);
+  color: var(--ink);
+  line-height: 1.5;
+  /* Stacked backgrounds: graph paper made only from gradients.
+     Syntax: image position / size. Last layer is the base color. */
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 32px 32px,
+    radial-gradient(circle at 15% 10%, #f3f8ff, transparent 55%),
+    var(--paper);
+}
+
+/* ============ 3. THE SHEET (main card) ============ */
+.sheet {
+  position: relative;                  /* anchor for absolute children (the tape) */
+  width: min(100%, 760px);
+  padding: clamp(1.4rem, 4vw, 2.6rem);
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 8px 8px 0 var(--ink);    /* hard offset shadow, no blur */
+  animation: settle 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;  /* page-load moment */
+}
+
+/* Strip of tape stuck on the top edge: absolute position + rotate */
+.sheet::before {
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: 44px;
+  width: 96px;
+  height: 28px;
+  background: var(--amber);
+  opacity: 0.88;
+  transform: rotate(-4deg);
+  clip-path: polygon(0 0, 100% 6%, 96% 100%, 3% 94%);  /* torn edge */
+}
+
+/* ============ 4. HEADER ============ */
+.masthead h1 {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 5vw, 2.7rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.masthead p { margin: 0; max-width: 52ch; color: var(--ink-soft); }
+
+/* ============ 5. STAGE: browser -- wire -- server ============ */
+.stage {
+  display: flex;
+  align-items: center;
+  margin: 2.6rem 0 2rem;
+  padding: 1.6rem 1rem;
+  border: 2px dashed var(--ink-soft);
+  border-radius: 16px;
+  /* diagonal hatch pattern */
+  background: repeating-linear-gradient(
+    45deg, transparent 0 10px, rgba(35, 64, 232, 0.06) 10px 20px
+  );
+}
+
+.node {
+  position: relative;
+  flex: none;
+  width: 7.5rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  text-align: center;
+}
+.node small { font-size: 0.78rem; color: var(--ink-soft); }
+
+/* Icons drawn with CSS only (no images) */
+.node::before {
+  content: "";
+  width: 68px;
+  height: 54px;
+  margin-bottom: 0.5rem;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: #fff;
+}
+.node--client::before {              /* window: colored title bar on top */
+  background: linear-gradient(var(--cobalt) 0 14px, #fff 14px);
+}
+.node--server::before {              /* rack: repeating horizontal slots */
+  height: 66px;
+  background: repeating-linear-gradient(#fff 0 18px, var(--ink) 18px 20px);
+}
+
+/* Status light on the server (absolute inside .node) */
+.node--server::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: calc(50% + 18px);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+}
+.node--server[data-state="online"]::after {
+  background: var(--ok);
+  animation: blink 2.4s ease-in-out infinite;
+}
+.node--server[data-state="offline"]::after { background: var(--bad); }
+
+/* Ring that flashes when the server receives the request */
+.node.is-receiving::before { animation: ring 0.6s ease-out; }
+
+/* The wire between the two nodes */
+.wire {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  margin: 0 0.6rem;
+  background: repeating-linear-gradient(90deg, var(--ink) 0 8px, transparent 8px 14px);
+  background-size: 14px 4px;
+}
+.stage.is-busy .wire { animation: march 0.4s linear infinite; }  /* dashes move */
+.stage:has([data-state="offline"]) .wire { opacity: 0.35; }       /* :has() = parent selector */
+
+.wire__label {
+  position: absolute;
+  top: -2.1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 0.4rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  background: var(--card);
+}
+
+/* The packet that travels (absolute inside .wire) */
+.packet {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 18px;
+  height: 18px;
+  background: var(--amber);
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.packet.is-sending  { animation: to-server 0.7s cubic-bezier(0.6, 0.05, 0.3, 1) forwards; }
+.packet.is-replying { animation: to-browser 0.7s cubic-bezier(0.6, 0.05, 0.3, 1) forwards; background: var(--ok); }
+
+/* ============ 6. CONTROLS ============ */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 1.5rem;
+}
+
+.send {
+  justify-self: start;
+  padding: 0.95rem 1.7rem;
+  font: 700 1rem var(--font-body);
+  color: #fff;
+  background: var(--cobalt);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.send:hover:not(:disabled)  { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
+.send:active:not(:disabled) { transform: translate(3px, 3px);   box-shadow: 1px 1px 0 var(--ink); }
+.send:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+.send:disabled { opacity: 0.7; cursor: progress; box-shadow: 0 0 0 var(--ink); transform: translate(4px, 4px); }
+
+.total { text-align: right; }
+.total output {
+  display: block;
+  font: 700 clamp(2.6rem, 8vw, 3.8rem) / 1 var(--font-code);
+  font-variant-numeric: tabular-nums;  /* digits keep equal width */
+}
+.total output.bump { animation: bump 0.35s ease; }
+.total span { font-size: 0.85rem; color: var(--ink-soft); }
+
+/* ============ 7. REQUEST LOG ============ */
+.log-wrap { margin-top: 2rem; }
+.log-wrap h2 { margin: 0 0 0.6rem; font-size: 1rem; }
+
+.log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column-reverse;      /* newest item (last in HTML) shows on top */
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: #fff;
+  overflow: hidden;
+}
+.log li {
+  display: grid;
+  grid-template-columns: 3.2rem 1fr auto auto;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.6rem 0.9rem;
+  font: 0.85rem var(--font-code);
+  border-top: 1px dashed var(--grid);
+}
+.log li:last-child { border-top: 0; }  /* top item in the visual order */
+.log .empty { display: block; color: var(--ink-soft); font-family: var(--font-body); }
+.entry { animation: slide-in 0.3s ease-out; }
+.entry__code {
+  padding: 0.1rem 0.4rem;
+  text-align: center;
+  color: #fff;
+  border-radius: 4px;
+  background: var(--ok);
+}
+.entry--fail .entry__code { background: var(--bad); }
+
+/* ============ 8. STATUS + FOOTER ============ */
+.status { min-height: 1.5em; margin: 1rem 0 0; font-size: 0.92rem; }
+.status.is-error { color: var(--bad); font-weight: 600; }
+.foot { margin-top: 1rem; font-size: 0.78rem; color: var(--ink-soft); word-break: break-all; }
+
+/* ============ 9. KEYFRAME ANIMATIONS ============ */
+@keyframes settle   { from { opacity: 0; transform: translateY(16px) rotate(-0.8deg); } }
+@keyframes to-server  { from { left: 0;    opacity: 1; } to { left: 100%; opacity: 1; } }
+@keyframes to-browser { from { left: 100%; opacity: 1; } to { left: 0;    opacity: 1; } }
+@keyframes march    { to { background-position: 14px 0; } }
+@keyframes ring     { from { box-shadow: 0 0 0 0 rgba(35, 64, 232, 0.5); } to { box-shadow: 0 0 0 18px transparent; } }
+@keyframes blink    { 50% { opacity: 0.35; } }
+@keyframes bump     { 40% { transform: scale(1.12); } }
+@keyframes slide-in { from { opacity: 0; transform: translateY(-8px); } }
+
+/* ============ 10. RESPONSIVE + ACCESSIBILITY ============ */
+@media (max-width: 520px) {
+  .node { width: 5.2rem; }
+  .stage { padding: 1.2rem 0.5rem; }
+  .controls { grid-template-columns: 1fr; }
+  .total { text-align: left; }
+  .log li { grid-template-columns: 3rem 1fr auto; }
+  .log li span:nth-child(3) { display: none; }
+}
+
+/* People who turn off animations in their OS get (almost) none */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
