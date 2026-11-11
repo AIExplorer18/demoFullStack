@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Full Stack Demo</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0;
+             display: grid; place-items: center; min-height: 100vh; margin: 0; }
+      .card { background: #1e293b; padding: 2rem 2.5rem; border-radius: 16px; text-align: center; max-width: 420px; }
+      button { background: #6366f1; color: white; border: 0; padding: .8rem 1.6rem;
+               border-radius: 10px; font-size: 1rem; cursor: pointer; }
+      button:disabled { opacity: .6; cursor: wait; }
+      #status { margin-top: 1.2rem; min-height: 3rem; }
+      small { color: #94a3b8; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Full Stack Demo</h1>
+      <p>Click the button to call the backend.</p>
+      <button id="btn">Call Backend</button>
+      <div id="status"></div>
+      <small id="api"></small>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
