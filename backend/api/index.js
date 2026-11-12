@@ -4,9 +4,23 @@ const cors = require("cors");
 const app = express();
 app.use(express.json());
 
-// CORS: only allow your frontend URL (set FRONTEND_URL in Vercel env vars).
-// Until you set it, "*" allows everyone (fine for learning).
-app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
+// CORS: FRONTEND_URL can hold one or more URLs, separated by commas.
+const allowedOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((url) => url.trim().replace(/\/+$/, "")) // remove trailing slashes
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      console.warn("CORS blocked origin:", origin, "| allowed:", allowedOrigins);
+      callback(null, false);
+    },
+  })
+);
 
 // Log every request that reaches the backend
 app.use((req, res, next) => {
